@@ -1,0 +1,57 @@
+#!/bin/bash
+
+
+server_bin=${install_dir}/${server_dir}/jenkins.war
+server_log=${log_dir}/${server_dir}/jenkins.log
+cha=":${port}"
+server=jenkins
+
+
+
+#[函数部分]
+server_test() {
+    netstat -unltp | grep $cha &> /dev/null
+    [[ $? -eq 0 ]] && return 0 || return 1
+}
+
+server_start() {
+    if server_test ;then
+        echo "$server start ok..."
+    else
+        nohup java -jar $server_bin --httpPort=$port --httpListenAddress=$listen &>> $server_log &
+        sleep 15
+        server_test && echo "$server start ok..." || echo "$server start error..."
+    fi
+}
+
+server_stop() {
+    if server_test ;then
+        pid=`netstat -unltp | grep $cha | awk '{print $7}' | awk -F'/' '{print $1}'`
+	    kill -9 $pid && echo "$server stop ok..." || echo "$server stop error..."
+    else
+        echo "$server stop ok..." 
+    fi
+}
+
+server_status() {
+    if server_test ;then
+        echo "$server start..."
+    else
+        echo "$server stop..."
+    fi
+}
+
+
+#主体
+if [ "$1" == "start" ];then
+    server_start
+elif [ "$1" == "stop" ];then
+    server_stop
+elif [ "$1" == "status" ];then
+    server_status
+elif [ "$1" == "restart" ];then
+    server_stop
+    server_start
+else
+	echo "start | stop | restart | status"
+fi

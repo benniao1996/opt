@@ -1,0 +1,61 @@
+#!/bin/bash
+#mindoc控制脚本
+
+
+
+server_bin=${install_dir}/${server_dir}/mindoc_linux_amd64
+server_log=${log_dir}/${server_dir}
+cha="mindoc_linux"
+server=mindoc
+
+
+
+#[函数部分]
+server_test() {
+    netstat -unltp | grep $cha &> /dev/null
+    [[ $? -eq 0 ]] && return 0 || return 1
+}
+
+server_start() {
+    if server_test ;then
+        echo "$server start ok..."
+    else
+        nohup $server_bin &>> ${server_log}/mindoc.log &
+        server_test && echo "$server start ok..." || echo "$server start error..."
+    fi
+}
+
+server_stop() {
+    if server_test ;then
+        pid=`netstat -unltp | grep $cha | awk  '{print $7}' | awk -F'/' '{print $1}'`
+	    kill -9 $pid && echo "$server stop ok..." || echo "$server stop error..."
+    else
+        echo "$server stop ok..." 
+    fi
+}
+
+server_status() {
+    $server_bin version
+    echo
+    if server_test ;then
+        echo "$server start..."
+    else
+        echo "$server stop..."
+    fi
+}
+
+
+
+#主体
+if [ "$1" == "start" ];then
+    server_start
+elif [ "$1" == "stop" ];then
+    server_stop
+elif [ "$1" == "status" ];then
+    server_status
+elif [ "$1" == "restart" ];then
+    server_stop
+    server_start
+else
+	echo "start | stop | restart | status"
+fi
